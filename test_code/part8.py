@@ -1,5 +1,7 @@
 from unittest import TestCase
 from copy import copy, deepcopy
+import weakref
+
 
 class CPart8Test(TestCase):
 
@@ -10,6 +12,9 @@ class CPart8Test(TestCase):
     def tearDown(self):
         "Hook method for deconstructing the test fixture after testing it."
         pass
+
+    def printdict(self, d):
+        print(list(d.keys()), list(d.values()))
 
     # 变量不是盒子， 而是便利贴
     def test_1(self):
@@ -113,6 +118,41 @@ class CPart8Test(TestCase):
         print(l)
         l.clear()
         print(l)
+
+    # ---------------- weakref
+    # 终结器，
+    def test_finalize(self):
+        def deadfunc(i):
+            print("gone %s" % i)
+        a = {1, 2, 3}
+        weakref.finalize(a, deadfunc, 100)
+        del a
+    # 直接调用，只生效一次
+    def test_finalize2(self):
+        def deadfunc(i):
+            print("gone %s" % i)
+        a = {1, 2, 3}
+        wr = weakref.finalize(a, deadfunc, 100)
+        for i in range(2):
+            wr()
+        del a
+
+    # proxy 与 ref的区别
+    def test_proxy(self):
+        a = {1, 2, 3}
+        wp = weakref.proxy(a)
+        wr = weakref.ref(a)
+        del a
+        print(type(wp)) # a被删除后，wp不可print. wr()为None
+
+    # 测试WeakValueDictionary
+    def test_WeakValueDictionary(self):
+        a = {1, 2, 3}
+        d = weakref.WeakValueDictionary()
+        d[1] = a
+        self.printdict(d)
+        del a
+        self.printdict(d)
 
 
 if __name__ == '__main__':
